@@ -1,5 +1,4 @@
 import torch
-from model import UNet
 import numpy as np
 import cv2
 from skimage.feature import peak_local_max
@@ -27,6 +26,8 @@ def load_model(weights_path="cell_counter_nuclear.pth"):
     global model
     if model is not None:
         return model
+
+    from model import UNet
 
     model = UNet()
     model = model.to(device)
