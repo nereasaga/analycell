@@ -19,20 +19,30 @@ else:
     device = "cpu"
     print("Usando CPU")
 
-# cargar el modelo
-model = UNet()
-model = model.to(device)
+# modelo global, inicializado vacío
+model = None
 
-# cargar pesos del modelo
-try:
-    model_weights = torch.load("cell_counter_nuclear.pth", map_location=device)
-    model.load_state_dict(model_weights)
-    model.eval()
-    print("Modelo cargado exitosamente")
-except FileNotFoundError:
-    print("ERROR: No se encontró el archivo del modelo 'cell_counter_nuclear.pth'.")
-    print("Asegúrate de que el archivo esté en el directorio actual")
-    exit()
+# función para cargar el modelo solo cuando se necesite
+def load_model(weights_path="cell_counter_nuclear.pth"):
+    global model
+    if model is not None:
+        return model
+
+    model = UNet()
+    model = model.to(device)
+
+    # cargar pesos del modelo
+    try:
+        model_weights = torch.load(weights_path, map_location=device)
+        model.load_state_dict(model_weights)
+        model.eval()
+        print("Modelo cargado exitosamente")
+    except FileNotFoundError:
+        print("ERROR: No se encontró el archivo del modelo 'cell_counter_nuclear.pth'.")
+        print("Asegúrate de que el archivo esté en el directorio actual")
+        model = None
+
+    return model
 
 # función para convertir array numpy a base64
 def convert_array_to_base64(image_array):
@@ -65,6 +75,12 @@ def convert_array_to_base64(image_array):
 
 # función ppal para predecir y contar núcleos con parámetros ajustables
 def predict_and_count_adjustable(input_image, min_distance=8, sigma=1.0, exclude_border=2):
+    global model
+    if model is None:
+        model = load_model()
+        if model is None:
+            return 0, None, None, None
+
     try:
         # escala de grises
         gray_image = input_image.convert("L")
