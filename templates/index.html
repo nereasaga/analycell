@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnalyCell - Contador de Núcleos Celulares</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 1.25rem;
+            font-size: 1rem;
+        }
+        
+        .container {
+            max-width: 90%;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.125rem 0.75rem rgba(0, 0, 0, 0.08);
+            border: 0.0625rem solid #e9ecef;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: #ffffff;
+            padding: 2.5rem 1.25rem;
+            text-align: center;
+            border-bottom: 0.0625rem solid #34495e;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+        
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 400;
+            color: #bdc3c7;
+        }
+        
+        .content {
+            padding: 2.5rem;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border: 0.0625rem solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 0.125rem solid #ced4da;
+            border-radius: 0.375rem;
+            background: #ffffff;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #6c757d;
+        }
+        
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #495057;
+            box-shadow: 0 0 0 0.1875rem rgba(73, 80, 87, 0.15);
+        }
+        
+        .parameter-group {
+            background: #ffffff;
+            padding: 1.25rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            border: 0.0625rem solid #e9ecef;
+        }
+        
+        .parameter-group label {
+            color: #6c757d;
+            margin-bottom: 0.75rem;
+        }
+        
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 0.375rem;
+            border-radius: 0.1875rem;
+            background: #e9ecef;
+            outline: none;
+            appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 1.125rem;
+            height: 1.125rem;
+            border-radius: 50%;
+            background: #495057;
+            cursor: pointer;
+            border: 0.125rem solid #ffffff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 1.125rem;
+            height: 1.125rem;
+            border-radius: 50%;
+            background: #495057;
+            cursor: pointer;
+            border: 0.125rem solid #ffffff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        }
+        
+        .slider-value {
+            background: #6c757d;
+            color: #ffffff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            min-width: 2.5rem;
+            text-align: center;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: #495057;
+            color: #ffffff;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
+        }
+        
+        .submit-btn:hover {
+            background: #343a40;
+            transform: translateY(-0.0625rem);
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem 1.25rem;
+            border-radius: 0.375rem;
+            border: 0.0625rem solid #f5c6cb;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .result-section {
+            background: #d1ecf1;
+            border: 0.0625rem solid #b8daff;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .result-count {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #0c5460;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #ffffff;
+            border-radius: 0.5rem;
+            border: 0.0625rem solid #b8daff;
+        }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        
+        .image-card {
+            background: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            border: 0.0625rem solid #b8daff;
+            text-align: center;
+        }
+        
+        .image-card h3 {
+            margin-bottom: 1rem;
+            color: #495057;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .image-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+            border: 0.0625rem solid #dee2e6;
+            margin-bottom: 0.75rem;
+        }
+        
+        .image-card p {
+            font-size: 0.8125rem;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2.5rem 1.25rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 0.1875rem solid #e9ecef;
+            border-top: 0.1875rem solid #495057;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        .loading p {
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+                /* Estilo para la lista de imágenes de validación */
+.validation-section {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+}
+
+.validation-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #343a40;
+}
+
+.validation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    list-style: none;
+    padding: 0;
+}
+
+.validation-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+.validation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    background: #e7f3ff;
+    border-color: #b8daff;
+}
+
+.validation-card a {
+    text-decoration: none;
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 500;
+    word-break: break-all;
+    transition: color 0.3s ease;
+}
+
+
+.validation-card:hover a {
+    color: #0c5460;
+}
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.625rem;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .upload-section {
+                padding: 1.25rem;
+            }
+            
+            .header {
+                padding: 1.5rem 1.25rem;
+            }
+            
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .header p {
+                font-size: 0.875rem;
+            }
+            
+            .result-count {
+                font-size: 1.5rem;
+                padding: 1.25rem;
+            }
+            
+            .images-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+
+
+        
+        /* Tablet */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .images-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+            
+            .image-card {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+        .validation-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+        
+        /* Large screens */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 85%;
+            }
+            .validation-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AnalyCell</h1>
+            <p>Sistema de análisis automatizado para conteo de núcleos celulares</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section">
+                <form id="uploadForm" action="/" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="file">Seleccionar imagen microscópica (TIFF, JPG, PNG):</label>
+                        <input type="file" name="file" id="file" accept=".tif,.tiff,.png,.jpg,.jpeg" required>
+                    </div>
+
+                    <!-- <div class="parameter-group">
+                        <label for="min_distance">Distancia mínima entre núcleos (píxeles):</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="min_distance" name="min_distance" min="1" max="20" value="8" oninput="minDistanceValue.textContent = this.value">
+                            <span id="minDistanceValue" class="slider-value">8</span>
+                        </div>
+                    </div>
+
+                    <div class="parameter-group">
+                        <label for="sigma">Factor de suavizado gaussiano (σ):</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="sigma" name="sigma" min="0" max="5" step="0.1" value="1.0" oninput="sigmaValue.textContent = this.value">
+                            <span id="sigmaValue" class="slider-value">1.0</span>
+                        </div>
+                    </div> -->
+
+                    <button type="submit" class="submit-btn">Iniciar análisis</button>
+                </form>
+            </div>
+
+            <div class="loading" id="loadingDiv">
+                <div class="spinner"></div>
+                <p>Procesando imagen... Por favor, espere.</p>
+            </div>
+
+            {% if error %}
+                <div class="error-message">
+                    Error: {{ error }}
+                </div>
+            {% endif %}
+
+            {% if num_cells is not none %}
+                <div class="result-section">
+                    <div class="result-count">
+                        Núcleos detectados: {{ num_cells }}
+                    </div>
+                    
+                    <div class="images-grid">
+                        {% if result_image_data %}
+                            <div class="image-card">
+                                <h3>Detección de contornos</h3>
+                                <img src="data:image/png;base64,{{ result_image_data }}" alt="Resultado con contornos">
+                                <p>Imagen original con contornos identificados y centros marcados de los núcleos detectados.</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if heatmap_image_data %}
+                            <div class="image-card">
+                                <h3>Mapa de probabilidades</h3>
+                                <img src="data:image/png;base64,{{ heatmap_image_data }}" alt="Mapa de calor">
+                                <p>Visualización de las probabilidades de detección calculadas por el algoritmo de análisis.</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if mask_image_data %}
+                            <div class="image-card">
+                                <h3>Máscara de segmentación</h3>
+                                <img src="data:image/png;base64,{{ mask_image_data }}" alt="Máscara binaria">
+                                <p>Máscara binaria resultante que muestra las regiones clasificadas como núcleos celulares.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+            <div class="validation-section">
+                <h2>Imágenes de validación</h2>
+                <p>
+                    Los siguientes archivos son imágenes con las que puedes probar la app. El modelo se ha entrenado con este tipo de imágenes,
+                    pero <strong>no con estas en concreto</strong>. Por lo tanto, al entrenar con este tipo de imágenes,
+                    solo se garantiza un rendimiento con ellas. <br>
+                    El número de núcleos en cada imagen viene en el nombre del archivo, precedido por una "C".
+                </p>
+                
+        
+                <ul id="validationList" class="validation-grid">
+                    <!-- enlaces de descarga -->
+                </ul>
+                <p style="font-style: italic; font-size: 0.9rem;">
+                    Used the image set BBBC005v1 from the Broad Bioimage Benchmark Collection
+                    [Ljosa et al., Nature Methods, 2012].
+                </p>
+            </div>
+        </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Mostrar el loading al enviar el formulario
+        document.getElementById('uploadForm').addEventListener('submit', function() {
+            document.getElementById('loadingDiv').classList.add('show');
+        });
+    
+        document.getElementById('file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            if (fileName) {
+                console.log('Archivo seleccionado:', fileName);
+            }
+        });
+    
+        // Cargar lista de imágenes de validación como enlaces de descarga
+        document.addEventListener('DOMContentLoaded', () => {
+            const validationList = document.getElementById('validationList');
+            const basePath = 'BBBC005/validation/images/';
+    
+            const knownImages = [
+                'SIMCEPImages_A02_C5_F1_s05_w1.TIF','SIMCEPImages_A02_C5_F1_s07_w1.TIF',
+                'SIMCEPImages_A02_C5_F1_s24_w1.TIF','SIMCEPImages_A03_C10_F1_s10_w1.TIF','SIMCEPImages_A03_C10_F1_s24_w1.TIF',
+                'SIMCEPImages_A04_C14_F1_s03_w1.TIF','SIMCEPImages_A04_C14_F1_s15_w1.TIF','SIMCEPImages_A04_C14_F1_s16_w1.TIF',
+                'SIMCEPImages_A04_C14_F1_s20_w1.TIF','SIMCEPImages_A04_C14_F1_s23_w1.TIF','SIMCEPImages_A05_C18_F1_s25_w1.TIF',
+                'SIMCEPImages_A07_C27_F1_s01_w1.TIF','SIMCEPImages_A07_C27_F1_s10_w1.TIF','SIMCEPImages_A08_C31_F1_s02_w1.TIF',
+                'SIMCEPImages_A08_C31_F1_s10_w1.TIF','SIMCEPImages_A08_C31_F1_s15_w1.TIF','SIMCEPImages_A09_C35_F1_s18_w1.TIF',
+                'SIMCEPImages_A10_C40_F1_s04_w1.TIF','SIMCEPImages_A10_C40_F1_s08_w1.TIF','SIMCEPImages_A10_C40_F1_s17_w1.TIF',
+                'SIMCEPImages_A10_C40_F1_s24_w1.TIF','SIMCEPImages_A12_C48_F1_s03_w1.TIF','SIMCEPImages_A12_C48_F1_s25_w1.TIF',
+                'SIMCEPImages_A13_C53_F1_s01_w1.TIF','SIMCEPImages_A13_C53_F1_s03_w1.TIF','SIMCEPImages_A13_C53_F1_s19_w1.TIF',
+                'SIMCEPImages_A13_C53_F1_s20_w1.TIF','SIMCEPImages_A14_C57_F1_s08_w1.TIF','SIMCEPImages_A14_C57_F1_s09_w1.TIF',
+                'SIMCEPImages_A14_C57_F1_s12_w1.TIF','SIMCEPImages_A15_C61_F1_s15_w1.TIF','SIMCEPImages_A15_C61_F1_s25_w1.TIF',
+                'SIMCEPImages_A16_C66_F1_s07_w1.TIF','SIMCEPImages_A16_C66_F1_s18_w1.TIF',
+                'SIMCEPImages_A21_C87_F1_s04_w1.TIF','SIMCEPImages_A21_C87_F1_s17_w1.TIF','SIMCEPImages_A22_C91_F1_s21_w1.TIF',
+                'SIMCEPImages_A23_C96_F1_s11_w1.TIF','SIMCEPImages_A23_C96_F1_s16_w1.TIF','SIMCEPImages_A23_C96_F1_s18_w1.TIF',
+                'SIMCEPImages_A24_C100_F1_s03_w1.TIF','SIMCEPImages_A24_C100_F1_s09_w1.TIF','SIMCEPImages_A24_C100_F1_s17_w1.TIF'
+            ];
+    
+            knownImages.forEach(filename => {
+                const li = document.createElement('li');
+                li.classList.add('validation-card');
+                li.innerHTML = `<a href="${basePath}${filename}" download>${filename}</a>`;
+                validationList.appendChild(li);
+                });
+        });
+    </script>
+    
+</body>
+</html>
