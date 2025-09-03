@@ -106,7 +106,7 @@ def serve_validation_image(filename):
     return send_from_directory('BBBC005/validation/images', filename)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5001)))
 
 # from flask import Flask, request, render_template, send_from_directory, jsonify
 # import os
