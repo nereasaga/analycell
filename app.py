@@ -112,8 +112,13 @@ from flask import Flask, request, render_template, send_from_directory, jsonify
 import os
 import io
 import base64
-from PIL import Image
 import traceback
+import sys
+
+# Configurar logging
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -121,15 +126,63 @@ app = Flask(__name__)
 import_status = {
     "predict_imported": False,
     "predict_error": None,
-    "predict_function": None
+    "predict_function": None,
+    "pil_available": False,
+    "torch_available": False,
+    "cv2_available": False
 }
+
+def check_dependencies():
+    """Verificar todas las dependencias una por una"""
+    results = {}
+    
+    # Verificar PIL
+    try:
+        from PIL import Image
+        results["PIL"] = {"status": "OK", "version": getattr(Image, "__version__", "unknown")}
+    except Exception as e:
+        results["PIL"] = {"status": "ERROR", "error": str(e)}
+    
+    # Verificar torch
+    try:
+        import torch
+        results["torch"] = {
+            "status": "OK", 
+            "version": torch.__version__,
+            "cuda_available": torch.cuda.is_available()
+        }
+    except Exception as e:
+        results["torch"] = {"status": "ERROR", "error": str(e)}
+    
+    # Verificar cv2
+    try:
+        import cv2
+        results["cv2"] = {"status": "OK", "version": cv2.__version__}
+    except Exception as e:
+        results["cv2"] = {"status": "ERROR", "error": str(e)}
+    
+    # Verificar numpy
+    try:
+        import numpy as np
+        results["numpy"] = {"status": "OK", "version": np.__version__}
+    except Exception as e:
+        results["numpy"] = {"status": "ERROR", "error": str(e)}
+    
+    # Verificar scikit-image
+    try:
+        import skimage
+        results["skimage"] = {"status": "OK", "version": skimage.__version__}
+    except Exception as e:
+        results["skimage"] = {"status": "ERROR", "error": str(e)}
+    
+    return results
 
 def safe_import_predict():
     """Importa predict de forma segura y reporta errores detallados"""
     try:
-        print("🔄 Intentando importar predict...")
+        logger.info("🔄 Intentando importar predict...")
         from predict import predict_and_count_adjustable
-        print("✅ predict.py importado exitosamente")
+        logger.info("✅ predict.py importado exitosamente")
         return predict_and_count_adjustable, None
     except Exception as e:
         error_details = {
@@ -137,65 +190,115 @@ def safe_import_predict():
             "type": type(e).__name__,
             "traceback": traceback.format_exc()
         }
-        print(f"❌ Error importando predict: {error_details}")
+        logger.error(f"❌ Error importando predict: {error_details}")
         return None, error_details
 
-# Intentar importar al inicio
-print("🚀 Iniciando aplicación Flask...")
-predict_func, import_error = safe_import_predict()
-
-if predict_func:
-    import_status["predict_imported"] = True
-    import_status["predict_function"] = predict_func
-else:
-    import_status["predict_imported"] = False
-    import_status["predict_error"] = import_error
+# Inicialización con manejo de errores
+try:
+    logger.info("🚀 Iniciando aplicación Flask...")
+    
+    # Verificar dependencias básicas primero
+    deps = check_dependencies()
+    logger.info(f"📦 Estado de dependencias: {deps}")
+    
+    # Verificar PIL específicamente (lo necesitamos para la ruta básica)
+    from PIL import Image
+    import_status["pil_available"] = True
+    logger.info("✅ PIL disponible")
+    
+    # Intentar importar predict
+    predict_func, import_error = safe_import_predict()
+    
+    if predict_func:
+        import_status["predict_imported"] = True
+        import_status["predict_function"] = predict_func
+        logger.info("✅ Predict function loaded successfully")
+    else:
+        import_status["predict_imported"] = False
+        import_status["predict_error"] = import_error
+        logger.warning("⚠️ Predict function not available")
+        
+except Exception as e:
+    logger.error(f"💥 Error crítico durante la inicialización: {e}")
+    logger.error(traceback.format_exc())
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error en index route: {e}")
+        return f"Error loading index page: {str(e)}", 500
 
 @app.route('/health')
 def health():
-    return jsonify({
-        "status": "healthy",
-        "message": "App is running",
-        "predict_available": import_status["predict_imported"],
-        "predict_error": import_status["predict_error"]
-    })
+    try:
+        return jsonify({
+            "status": "healthy",
+            "message": "App is running",
+            "predict_available": import_status.get("predict_imported", False),
+            "pil_available": import_status.get("pil_available", False)
+        })
+    except Exception as e:
+        logger.error(f"Error en health route: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/deps')
+def check_deps():
+    """Endpoint para verificar dependencias"""
+    try:
+        deps = check_dependencies()
+        return jsonify(deps)
+    except Exception as e:
+        logger.error(f"Error en deps route: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/debug')
 def debug():
-    """Endpoint para debugging de imports"""
-    debug_info = {
-        "python_path": os.environ.get('PYTHONPATH', 'Not set'),
-        "current_directory": os.getcwd(),
-        "files_in_directory": os.listdir('.'),
-        "predict_import_status": import_status,
-        "torch_available": False,
-        "model_file_exists": os.path.exists('cell_counter_nuclear.pth')
-    }
-    
-    # Verificar si torch está disponible
+    """Endpoint para debugging completo"""
     try:
-        import torch
-        debug_info["torch_available"] = True
-        debug_info["torch_version"] = torch.__version__
-        debug_info["cuda_available"] = torch.cuda.is_available()
-    except:
-        debug_info["torch_available"] = False
-    
-    return jsonify(debug_info)
+        # Crear info básica primero
+        debug_info = {
+            "status": "✅ App funcionando correctamente",
+            "python_version": sys.version.split()[0],  # Solo la versión, no todo
+            "python_path": os.environ.get('PYTHONPATH', 'Not set'),
+            "current_directory": os.getcwd(),
+            "predict_imported": import_status.get("predict_imported", False),
+            "model_file_exists": os.path.exists('cell_counter_nuclear.pth'),
+            "key_files_present": {
+                "app.py": os.path.exists('app.py'),
+                "predict.py": os.path.exists('predict.py'),
+                "model.py": os.path.exists('model.py'),
+                "templates/index.html": os.path.exists('templates/index.html')
+            }
+        }
+        
+        # Agregar error de predict solo si existe y es serializable
+        if import_status.get("predict_error"):
+            error = import_status["predict_error"]
+            debug_info["predict_error"] = {
+                "type": error.get("type", "Unknown"),
+                "message": error.get("error", "Unknown error")
+                # Omitir traceback para evitar problemas de serialización
+            }
+        
+        return jsonify(debug_info)
+    except Exception as e:
+        logger.error(f"Error en debug route: {e}")
+        return jsonify({
+            "error": str(e), 
+            "message": "Debug endpoint failed but app is working"
+        }), 500
 
 @app.route('/predict', methods=['POST'])
 def predict_route():
-    if not import_status["predict_imported"]:
-        return jsonify({
-            "error": "Prediction not available",
-            "details": import_status["predict_error"]
-        }), 500
-    
     try:
+        if not import_status.get("predict_imported", False):
+            return jsonify({
+                "error": "Prediction not available",
+                "details": import_status.get("predict_error")
+            }), 503  # Service Unavailable
+        
         # Verificar si se subió un archivo
         if 'file' not in request.files:
             return jsonify({"error": "No file provided"}), 400
@@ -205,6 +308,7 @@ def predict_route():
             return jsonify({"error": "No file selected"}), 400
         
         # Convertir archivo a PIL Image
+        from PIL import Image
         image = Image.open(file.stream)
         
         # Obtener parámetros opcionales
@@ -227,6 +331,8 @@ def predict_route():
         return jsonify(response)
         
     except Exception as e:
+        logger.error(f"Error en predict route: {e}")
+        logger.error(traceback.format_exc())
         return jsonify({
             "error": str(e),
             "traceback": traceback.format_exc()
@@ -238,10 +344,11 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    return jsonify({"error": "Internal server error"}), 500
+    logger.error(f"Error 500: {error}")
+    return jsonify({"error": "Internal server error", "details": str(error)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"🌟 Iniciando servidor en puerto {port}")
-    print(f"📊 Status de predict: {import_status['predict_imported']}")
+    logger.info(f"🌟 Iniciando servidor en puerto {port}")
+    logger.info(f"📊 Status de predict: {import_status.get('predict_imported', False)}")
     app.run(host='0.0.0.0', port=port, debug=False)
