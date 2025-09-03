@@ -106,6 +106,4 @@ def serve_validation_image(filename):
     return send_from_directory('BBBC005/validation/images', filename)
 
 if __name__ == "__main__":
-    print("🚀 Servidor iniciado en http://127.0.0.1:5001")
-    print("📁 Asegúrate de que el archivo 'cell_counter_nuclear.pth' esté en el directorio actual")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
